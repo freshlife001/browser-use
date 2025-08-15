@@ -4,8 +4,7 @@ import json
 import logging
 import os
 import re
-from typing import Generic, TypeVar, cast
-
+from typing import Generic, TypeVar, cast, Dict, Any, List, Optional
 try:
 	from lmnr import Laminar  # type: ignore
 except ImportError:
@@ -44,6 +43,17 @@ logger = logging.getLogger(__name__)
 Context = TypeVar('Context')
 
 T = TypeVar('T', bound=BaseModel)
+
+class ExtractedDataField(BaseModel):
+	key: str
+	value: str
+	element_indexes: list[int] = []
+
+class ExtractedDataItem(BaseModel):
+    fields: list[ExtractedDataField]
+
+class ExtractedData(BaseModel):
+    items: list[ExtractedDataItem]
 
 
 class Controller(Generic[Context]):
@@ -325,9 +335,14 @@ Only use this for specific queries for information retrieval from the page. Don'
 			markdownify_func = partial(markdownify.markdownify, strip=strip)
 
 			try:
-				content = await asyncio.wait_for(
-					loop.run_in_executor(None, markdownify_func, page_html), timeout=5.0
-				)  # 5 second aggressive timeout
+				# content = await asyncio.wait_for(
+				# 	loop.run_in_executor(None, markdownify_func, page_html), timeout=5.0
+				# )  # 5 second aggressive timeout
+				from browser_use.dom.service import DomService
+				dom_service = DomService(page, logger=logger)
+				dom_state = await dom_service.get_clickable_elements(highlight_elements=False, viewport_expansion=-1)
+				await file_system.write_file(f"page_structure_{file_system.extracted_content_count}.json", json.dumps(dom_state.element_tree.__json__(), indent=2))
+				content = dom_state.element_tree.clickable_elements_to_string()
 			except Exception as e:
 				logger.warning(f'Markdownify failed: {type(e).__name__}')
 				raise RuntimeError(f'Could not convert html to markdown: {type(e).__name__}')
@@ -356,7 +371,7 @@ Only use this for specific queries for information retrieval from the page. Don'
 			content = re.sub(r'\n+', '\n', content)
 
 			# limit to 30000 characters - remove text in the middle (≈15000 tokens)
-			max_chars = 30000
+			max_chars = 60000
 			if len(content) > max_chars:
 				logger.info(f'Content is too long, removing middle {len(content) - max_chars} characters')
 				content = (
@@ -370,16 +385,49 @@ Only use this for specific queries for information retrieval from the page. Don'
 2. Does not make sense for the page
 3. Some/all of the information is not available
 
-Explain the content of the page and that the requested information is not available in the page. Respond in JSON format.\nQuery: {query}\n Website:\n{page}"""
+Explain the content of the page and that the requested information is not available in the page. 
+
+Website Content Structure: 
+All  elements in the website will be provided in format as [index]<type>text</type> where
+- index: Numeric identifier for interaction
+- type: HTML element type (button, input, etc.)
+- text: Element description
+
+Examples:
+[33]<div>User form</div>
+\t*[35]<button aria-label='Submit form'>Submit</button>
+
+Note that:
+- Only elements with numeric indexes in [] are interactive
+- (stacked) indentation (with \t) is important and means that the element is a (html) child of the element above (with a lower index)
+- Elements tagged with `*[` are the new clickable elements that appeared on the website since the last step - if url has not changed.
+- Pure text elements without [] are not interactive.
+
+Respond in JSON format.
+- always respone with a JSON array of objects
+- each object represents a structed data extracted
+- each property in the object is a field with a name , a string value ,and a element_indexes
+- all value are string type
+- the value of element_indexes is list of indexes: [index1, index2, ...]
+- we can use element_indexes to extract field using playright script
+- if the document contains only one object, return an array with a single object
+- each object in the return array should have a same structure
+```
+
+
+
+\nQuery: {query}\n Website Content:\n{page}"""
 			try:
 				formatted_prompt = prompt.format(query=query, page=content)
+				await file_system.write_file(f"page_extraction_llm_prompt_{file_system.extracted_content_count}.txt", formatted_prompt)
 				# Aggressive timeout for LLM call
 				response = await asyncio.wait_for(
-					page_extraction_llm.ainvoke([UserMessage(content=formatted_prompt)]),
+					page_extraction_llm.ainvoke([UserMessage(content=formatted_prompt)], output_format=ExtractedData),
 					timeout=120.0,  # 120 second aggressive timeout for LLM call
 				)
-
-				extracted_content = f'Page Link: {page.url}\nQuery: {query}\nExtracted Content:\n{response.completion}'
+				result = json.dumps(response.completion.model_dump(), indent=2)
+				extracted_content = f'Page Link: {page.url}\nQuery: {query}\nExtracted Content:\n{result}'
+				await file_system.write_file(f"page_extraction_result_{file_system.extracted_content_count}.json", result)
 
 				# if content is small include it to memory
 				MAX_MEMORY_SIZE = 600
@@ -411,9 +459,9 @@ Explain the content of the page and that the requested information is not availa
 				logger.warning(error_msg)
 				raise RuntimeError(error_msg)
 			except Exception as e:
-				logger.debug(f'Error extracting content: {e}')
-				msg = f'📄  Extracted from page\n: {content}\n'
-				logger.info(msg)
+				logger.error(f'Error extracting content: {e}')
+				# msg = f'📄  Extracted from page\n: {content}\n'
+				# logger.info(msg)
 				raise RuntimeError(str(e))
 
 		@self.registry.action(

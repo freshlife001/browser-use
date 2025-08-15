@@ -184,7 +184,7 @@ class Agent(Generic[Context, AgentStructuredOutput]):
 		display_files_in_done_text: bool = True,
 		include_tool_call_examples: bool = False,
 		vision_detail_level: Literal['auto', 'low', 'high'] = 'auto',
-		llm_timeout: int = 60,
+		llm_timeout: int = 120,
 		step_timeout: int = 180,
 		**kwargs,
 	):

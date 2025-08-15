@@ -174,7 +174,7 @@ class MessageManager:
 			result = []
 		step_number = step_info.step_number if step_info else None
 
-		self.state.read_state_description = ''
+		#self.state.read_state_description = ''
 
 		action_results = ''
 		result_len = len(result)
