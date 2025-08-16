@@ -290,6 +290,8 @@ class BrowserSession(BaseModel):
 		exclude=True,
 	)
 
+	_secure_text: dict[str, Any] | None = PrivateAttr(default=None)
+
 	_cached_browser_state_summary: BrowserStateSummary | None = PrivateAttr(default=None)
 	_cached_clickable_element_hashes: CachedClickableElementHashes | None = PrivateAttr(default=None)
 	_tab_visibility_callback: Any = PrivateAttr(default=None)

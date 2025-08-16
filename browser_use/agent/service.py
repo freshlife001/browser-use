@@ -368,6 +368,7 @@ class Agent(Generic[Context, AgentStructuredOutput]):
 					'⚠️ Attempting to use multiple Agents with the same BrowserSession! This is not supported yet and will likely lead to strange behavior, use separate BrowserSessions for each Agent.'
 				)
 				self.browser_session = browser_session.model_copy()
+				self.browser_session._secure_text = browser_session._secure_text
 		else:
 			if browser is not None:
 				assert isinstance(browser, Browser), 'Browser is not set up'

@@ -19,7 +19,7 @@ class ClickElementAction(BaseModel):
 
 class InputTextAction(BaseModel):
 	index: int
-	text: str
+	text_key: str
 
 
 class DoneAction(BaseModel):

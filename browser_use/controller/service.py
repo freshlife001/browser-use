@@ -206,13 +206,17 @@ class Controller(Generic[Context]):
 				raise Exception(f'Element index {params.index} does not exist - retry or use alternative actions')
 
 			try:
-				await browser_session._input_text_element_node(element_node, params.text)
+				text = params.text_key
+				if browser_session._secure_text:
+					has_sensitive_data = True
+					text = browser_session._secure_text.get(params.text_key, params.text_key)
+				await browser_session._input_text_element_node(element_node, text)
 			except Exception:
 				msg = f'Failed to input text into element {params.index}.'
 				raise BrowserError(msg)
 
 			if not has_sensitive_data:
-				msg = f'⌨️  Input {params.text} into index {params.index}'
+				msg = f'⌨️  Input {text} into index {params.index}'
 			else:
 				msg = f'⌨️  Input sensitive data into index {params.index}'
 			logger.info(msg)
@@ -220,7 +224,7 @@ class Controller(Generic[Context]):
 			return ActionResult(
 				extracted_content=msg,
 				include_in_memory=True,
-				long_term_memory=f"Input '{params.text}' into element {params.index}.",
+				long_term_memory=f"Input '{text}' into element {params.index}.",
 			)
 
 		@self.registry.action('Upload file to interactive element with file path', param_model=UploadFileAction)
