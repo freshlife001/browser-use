@@ -85,6 +85,8 @@ def setup_logging(stream=None, log_level=None, force_setup=False):
 
 	class BrowserUseFormatter(logging.Formatter):
 		def format(self, record):
+			if isinstance(record.msg, str) and len(record.msg) > 1000:
+				record.msg = record.msg[:1000] + "...[truncated]"
 			# if isinstance(record.name, str) and record.name.startswith('browser_use.'):
 			# 	record.name = record.name.split('.')[-2]
 			return super().format(record)

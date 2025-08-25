@@ -10,7 +10,7 @@ try:
 except ImportError:
 	Laminar = None  # type: ignore
 from bubus.helpers import retry
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from browser_use.agent.views import ActionModel, ActionResult
 from browser_use.browser import BrowserSession
@@ -45,15 +45,25 @@ Context = TypeVar('Context')
 T = TypeVar('T', bound=BaseModel)
 
 class ExtractedDataField(BaseModel):
-	key: str
-	value: str
-	element_indexes: list[int] = []
+	key: str = Field(
+			description="the key of this field"
+	)
+	value: str = Field(
+			description="the value of this field"
+	)
+	element_indexes: list[int] = Field(
+			description="the element_indexes of this field, these are indexes of elements in the page that contain this field value."
+	)
 
 class ExtractedDataItem(BaseModel):
-    fields: list[ExtractedDataField]
+    fields: list[ExtractedDataField]= Field(
+        description="List of fields of object."
+    )
 
 class ExtractedData(BaseModel):
-    items: list[ExtractedDataItem]
+    objects: list[ExtractedDataItem] = Field(
+        description="List of objects extacted from page, each object should have same number of fields."
+    )
 
 
 class Controller(Generic[Context]):
@@ -408,14 +418,6 @@ Note that:
 - Pure text elements without [] are not interactive.
 
 Respond in JSON format.
-- always respone with a JSON array of objects
-- each object represents a structed data extracted
-- each property in the object is a field with a name , a string value ,and a element_indexes
-- all value are string type
-- the value of element_indexes is list of indexes: [index1, index2, ...]
-- we can use element_indexes to extract field using playright script
-- if the document contains only one object, return an array with a single object
-- each object in the return array should have a same structure
 ```
 
 
