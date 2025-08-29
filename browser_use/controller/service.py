@@ -234,7 +234,7 @@ class Controller(Generic[Context]):
 			return ActionResult(
 				extracted_content=msg,
 				include_in_memory=True,
-				long_term_memory=f"Input '{text}' into element {params.index}.",
+				long_term_memory=f"Input '{text}' into element {params.index}. [xpath={element_node.xpath}]",
 			)
 
 		@self.registry.action('Upload file to interactive element with file path', param_model=UploadFileAction)

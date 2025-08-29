@@ -141,8 +141,8 @@ class Agent(Generic[Context, AgentStructuredOutput]):
 		initial_actions: list[dict[str, dict[str, Any]]] | None = None,
 		# Cloud Callbacks
 		register_new_step_callback: (
-			Callable[['BrowserStateSummary', 'AgentOutput', int], None]  # Sync callback
-			| Callable[['BrowserStateSummary', 'AgentOutput', int], Awaitable[None]]  # Async callback
+			Callable[['BrowserStateSummary', 'AgentOutput', int, dict[str, Any]], None]  # Sync callback
+			| Callable[['BrowserStateSummary', 'AgentOutput', int, dict[str, Any]], Awaitable[None]]  # Async callback
 			| None
 		) = None,
 		register_done_callback: (
@@ -947,10 +947,12 @@ class Agent(Generic[Context, AgentStructuredOutput]):
 	) -> None:
 		"""Handle callbacks and conversation saving after LLM interaction"""
 		if self.register_new_step_callback and self.state.last_model_output:
+			usage_summary = await self.token_cost_service.get_usage_summary()
+			usage_summary_data = usage_summary.model_dump()
 			if inspect.iscoroutinefunction(self.register_new_step_callback):
-				await self.register_new_step_callback(browser_state_summary, self.state.last_model_output, self.state.n_steps)
+				await self.register_new_step_callback(browser_state_summary, self.state.last_model_output, self.state.n_steps, usage_summary_data)
 			else:
-				self.register_new_step_callback(browser_state_summary, self.state.last_model_output, self.state.n_steps)
+				self.register_new_step_callback(browser_state_summary, self.state.last_model_output, self.state.n_steps, usage_summary_data)
 
 		if self.settings.save_conversation_path and self.state.last_model_output:
 			# Treat save_conversation_path as a directory (consistent with other recording paths)
