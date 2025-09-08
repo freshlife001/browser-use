@@ -62,7 +62,7 @@ class ExtractedDataItem(BaseModel):
 
 class ExtractedData(BaseModel):
     objects: list[ExtractedDataItem] = Field(
-        description="List of objects extacted from page, each object should have same number of fields."
+        description="List of objects extacted from page, all objects have the same structure, and the same number of fields. If the web page represents only one object, return a list of a single object."
     )
 
 
@@ -167,7 +167,7 @@ class Controller(Generic[Context]):
 
 		# Element Interaction Actions
 
-		@self.registry.action('Click element by index', param_model=ClickElementAction)
+		@self.registry.action('Click element by index, perform click_element_by_index at most once per step', param_model=ClickElementAction)
 		async def click_element_by_index(params: ClickElementAction, browser_session: BrowserSession):
 			element_node = await browser_session.get_dom_element_by_index(params.index)
 			if element_node is None:
@@ -191,7 +191,7 @@ class Controller(Generic[Context]):
 					msg = f'Downloaded file to {download_path}'
 				else:
 					emoji = '🖱️'
-					msg = f'Clicked button with index {params.index}: {element_node.get_all_text_till_next_clickable_element(max_depth=2)}'
+					msg = f'Clicked button with index {params.index}: {element_node.get_all_text_till_next_clickable_element(max_depth=2)} [xpath={element_node.xpath}]'
 
 				logger.info(f'{emoji} {msg}')
 				logger.debug(f'Element xpath: {element_node.xpath}')
@@ -207,7 +207,7 @@ class Controller(Generic[Context]):
 				raise BrowserError(error_msg)
 
 		@self.registry.action(
-			'Click and input text into a input interactive element',
+			'Click and input text into a input interactive element, perform input_text at most once per step',
 			param_model=InputTextAction,
 		)
 		async def input_text(params: InputTextAction, browser_session: BrowserSession, has_sensitive_data: bool = False):

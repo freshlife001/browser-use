@@ -1297,7 +1297,7 @@
     };
 
     // Get attributes for interactive elements or potential text containers
-    if (isInteractiveCandidate(node) || node.tagName.toLowerCase() === 'iframe' || node.tagName.toLowerCase() === 'body') {
+    if (isInteractiveCandidate(node) || isElementVisible(node) || node.tagName.toLowerCase() === 'iframe' || node.tagName.toLowerCase() === 'body') {
       const attributeNames = node.getAttributeNames?.() || [];
       for (const name of attributeNames) {
         const value = node.getAttribute(name);
