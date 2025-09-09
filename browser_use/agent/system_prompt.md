@@ -142,7 +142,8 @@ Maximize efficiency by combining related actions in one step instead of doing th
 - `input_text` + `click_element_by_index` → Fill form field and submit/search in one step
 - `click_element_by_index` + `input_text` → Click input field and fill it immediately
 - `click_element_by_index` + `click_element_by_index` → Navigate through multi-step flows (when safe)
-- File operations + browser actions 
+- File operations + browser actions
+- Combinning no more than 3 related actions in one step
 
 **Examples of Efficient Combinations:**
 ```json

@@ -4228,11 +4228,11 @@ class BrowserSession(BaseModel):
 
 			# let's first try to click and type
 			try:
-				await element_handle.evaluate('el => {el.textContent = ""; el.value = "";}')
+				await element_handle.evaluate('el => {el.value = "";}')
 				await element_handle.click(timeout=2_000)  # Add 2 second timeout
 				await asyncio.sleep(0.1)  # Increased sleep time
 				page = await self.get_current_page()
-				await page.keyboard.type(text)
+				await page.keyboard.type(text, delay=200) #200ms delay when typing
 				return
 			except Exception as e:
 				self.logger.debug(f'Input text with click and type failed, trying element handle method: {e}')
@@ -4250,7 +4250,7 @@ class BrowserSession(BaseModel):
 
 			try:
 				if (await is_contenteditable.json_value() or tag_name == 'input') and not (readonly or disabled):
-					await element_handle.evaluate('el => {el.textContent = ""; el.value = "";}')
+					await element_handle.evaluate('el => {el.value = "";}')
 					await element_handle.type(text, delay=5, timeout=5_000)  # Add 5 second timeout
 				else:
 					# Try fill() first for supported elements
@@ -4260,7 +4260,7 @@ class BrowserSession(BaseModel):
 						# If fill() fails because element doesn't support it, try type() instead
 						if 'not an <input>, <textarea>, <select>' in str(fill_error):
 							self.logger.debug(f'Element does not support fill(), using type() instead: {fill_error}')
-							await element_handle.evaluate('el => {el.textContent = ""; el.value = "";}')
+							await element_handle.evaluate('el => {el.value = "";}')
 							await element_handle.type(text, delay=5, timeout=5_000)
 						else:
 							raise
