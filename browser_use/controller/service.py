@@ -46,13 +46,13 @@ T = TypeVar('T', bound=BaseModel)
 
 class ExtractedDataField(BaseModel):
 	key: str = Field(
-			description="the key of this field"
+			description="the key of this field, should be unique within the object. representing the name of the field."
 	)
 	value: str = Field(
-			description="the value of this field"
+			description="the value of this field, can be text or a link (url), this field is optional, if the field is not found, return empty string."
 	)
 	element_indexes: list[int] = Field(
-			description="the element_indexes of this field, these are indexes of elements in the page that contain this field value."
+			description="the element_indexes of this field, if the field value is text, return indexes of elements  that contain the text, or if the field value is a link, return indexes of elements of all related links."
 	)
 
 class ExtractedDataItem(BaseModel):
